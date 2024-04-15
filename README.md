@@ -1,6 +1,6 @@
 # Legal-Information-Retrieval
 
-## How to use metrics.py
+## How to use ``metrics.py``
 
 Ensure that the output to whatever model you used is a json file of the format
 ```
