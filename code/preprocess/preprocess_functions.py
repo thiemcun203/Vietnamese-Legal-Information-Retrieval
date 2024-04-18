@@ -1,6 +1,5 @@
- # from python_rdrsegmenter import load_segmenter
-# segmenter = load_segmenter()
-from pyvi.ViTokenizer import tokenize
+from python_rdrsegmenter import load_segmenter
+segmenter = load_segmenter() 
 import re, string 
 
 def clean_text(text):
@@ -28,7 +27,7 @@ def remove_stopword(text):
     return text2
 
 def word_segment(sent):
-    sent = tokenize(sent.encode('utf-8').decode('utf-8'))
+    sent = segmenter.tokenize(sent.encode('utf-8').decode('utf-8'))
     return sent
 
 def bm25_preprocess(query):
