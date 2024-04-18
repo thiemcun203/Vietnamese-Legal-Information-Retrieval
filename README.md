@@ -32,3 +32,13 @@ Example
 ```
 
 Pass that file, along with ``true_results.json`` to initialize a ``RetrievalMetrics`` object. The methods available have been tested and should be easy to understand.
+
+
+## How to run GUI
+1. Make sure you downloaded all data from this link: https://drive.google.com/drive/folders/1J0GdSm2bY7GM-MCUQtPnceLrRhtGlrTt?usp=sharing
+2. Download `secrets.toml` and `.env` also from above link to configurate private key for application. Put `secrets.toml` into `.streamlit` folder which is same level with other folder like: `gui`, `data` or `.env` file
+3. Create virtual enviroment
+4. Run setup.sh to setup and download all necessary packages by typing the following commands to terminal:
+   1. `chmod +x setup.sh`
+   2. `./setup.sh`
+5. Start to use GUI: `streamlit run gui/main.py`
