@@ -1,0 +1,17 @@
+streamlit
+streamlit_chat
+langchain
+sentence_transformers
+openai
+streamlit-feedback
+google
+google-cloud-firestore
+torch
+qdrant-client
+transformers
+wandb
+pandas
+scikit-learn
+vncorenlp
+text-highlighter
+pyvi
