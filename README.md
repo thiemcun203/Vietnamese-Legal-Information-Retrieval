@@ -32,3 +32,11 @@ Example
 ```
 
 Pass that file, along with ``true_results.json`` to initialize a ``RetrievalMetrics`` object. The methods available have been tested and should be easy to understand.
+
+## How to run BM25
+
+Add `rdrsegmenter_legal_corpus.csv` to `input/` and then
+
+Run `main.py`:
+
+```python main.py```
