@@ -2,7 +2,7 @@ from functools import reduce
 import json
 
 class RetrievalMetrics:
-    def __init__(self, retrieval_results:str, true_results:str='true_results.json')->None:
+    def __init__(self, retrieval_results:str, true_results:str='true_test_results.json')->None:
         """
         - retrieval_results: str, path to the json file containing the retrieval results
         - true_results: str, path to the json file containing the true relevant articles
