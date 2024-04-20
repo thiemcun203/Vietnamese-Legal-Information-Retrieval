@@ -67,11 +67,19 @@ class BiEncoder:
         return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
     
     def query(self, segmented_question = 'khái_niệm quỹ đại_chúng', topk = 10):
-        results = self.client.search(
-                    collection_name = self.collection_name,
-                    query_vector=self.encode([segmented_question])[0],
-                    limit=topk,
-                )
+        wait = 0.1
+        while True:
+            try:
+                results = self.client.search(
+                            collection_name = self.collection_name,
+                            query_vector=self.encode([segmented_question])[0],
+                            limit=topk,
+                        )
+                break
+            except:
+                time.sleep(wait)
+                wait*=2
+        
         content_results = {}
         for point in results:
             law_id = point.payload['law_article_id']['law_id']
