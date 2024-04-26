@@ -11,18 +11,21 @@ from qdrant_client import QdrantClient
 
 class CorpusDataset:
     def __init__(self,
-                 corpus_df, 
+                 corpus_df,
+                 device, 
                  url = 'https://4d31c99a-9390-4174-8547-167526f0138b.europe-west3-0.gcp.cloud.qdrant.io:6333',
                  api_key = 'WcOwiXDWcFcKJBXkI2zH9LHQ2he0npQNkYTEmS84UGx4kcLwRbMVKg'):
         self.url =url
         self.api_key = api_key
+        self.device = device
         self.collection_name = 'embedding_legal_1'
         self.corpus_df = corpus_df
         self.client = QdrantClient(url=self.url, api_key=self.api_key)
-        self.model = SentenceTransformer('bkai-foundation-models/vietnamese-bi-encoder')
+        self.model = SentenceTransformer('bkai-foundation-models/vietnamese-bi-encoder').to(self.device)
 
     def encode(self, text):
-        return self.model.encode([text])[0]
+        text =[text].to(self.device)
+        return self.model.encode(text)[0]
     
     def query(self, segmented_question, topk=10):
         wait = 0.1
