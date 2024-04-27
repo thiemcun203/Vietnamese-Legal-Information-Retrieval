@@ -32,6 +32,6 @@ class BM25Utilities:
         return top_k_results
     
 def get_bm25_text(): 
-    inp = open("midpoints\\bm25_text", "rb")
+    inp = open("midpoints/bm25_text", "rb")
     text = pickle.load(inp)
     return text

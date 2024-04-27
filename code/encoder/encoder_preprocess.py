@@ -17,20 +17,20 @@ def preprocess_for_encoder(batch_size = 32):
     model = SentenceTransformer('bkai-foundation-models/vietnamese-bi-encoder', device=model_device) 
 
     print("Preprocessing corpus for encoder...")
-    path_to_corpus = "input\\rdrsegmenter_legal_corpus.csv"
+    path_to_corpus = "input/rdrsegmenter_legal_corpus.csv"
     corpus = pd.read_csv(path_to_corpus) 
     corpus['segmented_title_content'] = corpus.progress_apply(lambda x: encoder_preprocess(x.segmented_title_content), axis = 1) 
 
     print("Encoding corpus...") 
     corpus['encoded_content'] = encode(model, list(corpus['segmented_title_content']), batch_size=batch_size)
-    corpus.to_hdf("midpoints\\encoder_corpus.h5", key="encoder_corpus")
+    corpus.to_hdf("midpoints/encoder_corpus.h5", key="encoder_corpus")
   
     print("Preprocessing qna for encoder...")
-    path_to_qna = "input\\rdrsegmenter_testqna.csv"
+    path_to_qna = "input/rdrsegmenter_testqna.csv"
     qna = pd.read_csv(path_to_qna)
     qna['segmented_question'] = qna.progress_apply(lambda x: encoder_preprocess(x.segmented_question), axis = 1)
 
     print("Encoding qna...")
     qna_questions = list(qna['segmented_question'])
     qna['encoded_question'] = encode(model, qna_questions, batch_size=batch_size) 
-    qna.to_hdf("midpoints\\encoder_test_qna.h5", key="encoder_qna")
+    qna.to_hdf("midpoints/encoder_test_qna.h5", key="encoder_qna")
