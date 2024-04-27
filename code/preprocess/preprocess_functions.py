@@ -13,7 +13,7 @@ def normalize_text(text):
         text = text.replace(i, ' ')
     return text.lower()
 
-filename = 'input\\stopwords.txt'
+filename = 'input/stopwords.txt'
 list_stopwords = open(filename, 'r', encoding="utf8").read().splitlines()
 list_stopwords = [i.replace(" ", "_") for i in list_stopwords]  
 
@@ -30,8 +30,11 @@ def word_segment(sent):
     sent = segmenter.tokenize(sent.encode('utf-8').decode('utf-8'))
     return sent
 
-def bm25_preprocess(query):
-    query = remove_stopword(normalize_text(word_segment(clean_text(query)))) 
+def bm25_preprocess(query, skip_word_segment=False):
+    if skip_word_segment:
+        query = remove_stopword(normalize_text(clean_text(query))) 
+    else:
+        query = remove_stopword(normalize_text(word_segment(clean_text(query)))) 
     return query
 
 def encoder_preprocess(query):
