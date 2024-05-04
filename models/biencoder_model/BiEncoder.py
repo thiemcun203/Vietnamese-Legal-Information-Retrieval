@@ -12,7 +12,7 @@ sys.path.append(os.getcwd())
 from metrics import *
 dotenv_path = os.getcwd() + '/.env'
 load_dotenv(dotenv_path)
-
+import time
 class BiEncoder:
     def __init__(self, 
                  url = os.environ["BKAI_URL"],
@@ -75,6 +75,7 @@ class BiEncoder:
                             query_vector=self.encode([segmented_question])[0],
                             limit=topk,
                         )
+                print(results)
                 break
             except:
                 time.sleep(wait)
@@ -135,8 +136,8 @@ class BiEncoder:
     
 if __name__ == "__main__":
     biencoder = BiEncoder(
-                 url = os.environ["BKAI_URL"],
-                 api_key = os.environ["BKAI_APIKEY"],
+                 url = os.environ["SELF_HOST_URL"],
+                 api_key = os.environ["SELF_HOST_APIKEY"],
                  collection_name = os.environ["BKAI_COLLECTION_NAME"],
                  old_checkpoint = 'bkai-foundation-models/vietnamese-bi-encoder',
                  tunned_checkpoint = '/kaggle/input/checkpoint-1/best_checkpoint.pt',
@@ -144,10 +145,16 @@ if __name__ == "__main__":
                 )
 
     rdrsegmenter = VnCoreNLP("vncorenlp/VnCoreNLP-1.1.1.jar", annotators="wseg", max_heap_size='-Xmx500m') 
-    question = 'khái niệm quỹ đại chúng'
+    question = 'Điểm tóan thi được mấy điểm?'
     segmented_question = " ".join(rdrsegmenter.tokenize(question)[0])
+    # segmented_question = 'thông_tư này hướng_dẫn tuần_tra , canh_gác bảo_vệ đê_điều trong mùa lũ đối_với các tuyến đê sông được phân_loại , phân_cấp theo quy_định tại điều 4 của luật đê_điều .'
     print(segmented_question)
+    t1 = time.time()
+    # for i in range(4):
     print(biencoder.query(segmented_question = segmented_question, topk = 10))
+    # print(biencoder.query_lst())
+    t2 = time.time()
+    print('time', t2-t1)
     
     # print(biencoder.query_lst(segmented_questions = ['khái niệm quỹ đại chúng', "hồ sơ thành lập quán karaoke bao gồm những gì ?"], topk = 10))
     
