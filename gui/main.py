@@ -15,7 +15,7 @@ from google.cloud import firestore
 from google.oauth2 import service_account
 import json, sys, os
 sys.path.append(os.getcwd())
-from  models.biencoder_model.BiEncoder  import BiEncoder
+from  models.biencoder_model.bi_encoder  import BiEncoder
 from vncorenlp import VnCoreNLP
 from utils import *
 from text_highlighter import text_highlighter
@@ -199,7 +199,3 @@ if st.session_state.count > 1:
 
 print("Done turn! State: ",st.session_state.count) 
 #each action, fb - refresh page is a turn
-
-
-
-          
