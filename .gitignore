@@ -4,8 +4,14 @@
 __pycache__/
 .DS_Store
 
+# DATA
 input/
 output/
+models/bm25/output
 models/bm25/processed_data/
+models/bm25/prefitted_bm25/
 logs/
+
+# TESTING
 *.ipynb
+test.py
