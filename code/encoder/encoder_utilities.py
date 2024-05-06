@@ -37,9 +37,3 @@ class EncoderUtilities:
         top_k_results = [self.corpus_look_up[i] for i in top_ids][:self.limit]
 
         return top_k_results
-
-
-        
-        
-
-    
