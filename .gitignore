@@ -1,6 +1,11 @@
 /.streamlit
 /.env
-__pycache__/
-.DS_Store
 .venv/
 __pycache__/
+.DS_Store
+
+input/
+output/
+models/bm25/processed_data/
+logs/
+*.ipynb
