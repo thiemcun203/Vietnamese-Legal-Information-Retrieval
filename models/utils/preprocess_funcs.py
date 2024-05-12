@@ -1,6 +1,6 @@
 import os
 import re, string
-from python_rdrsegmenter import load_segmenter
+# from python_rdrsegmenter import load_segmenter
 
 # -------------------- Load stopwords --------------------
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -30,8 +30,8 @@ def remove_stopword(text):
     return text2
 
 def word_segment(sent):
-    segmenter = load_segmenter()
-    sent = segmenter.tokenize(sent.encode('utf-8').decode('utf-8'))
+    # segmenter = load_segmenter()
+    # sent = segmenter.tokenize(sent.encode('utf-8').decode('utf-8'))
     return sent
 
 # -------------------- Overall preprocess functions --------------------
