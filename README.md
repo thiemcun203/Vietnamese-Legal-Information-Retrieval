@@ -52,6 +52,7 @@ Run `main.py`:
 
 ## How to use vinhdoan's BM25
 1. Add `rdrsegmenter_legal_corpus.csv` and `rdrsegmenter_testqna` (on `dtv/bm25` on Google Drive) to `input/`
+
 2. Instantiate `BM25Preprocessor`
 ```
 preprocessor = BM25Preprocessor()
@@ -60,8 +61,19 @@ preprocessor.preprocess_qna("/input/rdrsegmenter_testqna.csv", skip_word_segment
 ```
 (Optional)
 Place `bm25_full_corpus.h5`, `bm25_only_text`, `bm25_test_qna.h5` in `bm25/processed_data` to avoid having to preprocess.
+
 3. Instantiate `BM25`
 ```
 bm25 = BM25(k1=1.2, b=0.65)
 bm25.fit()
+```
+
+4. For inference
+```
+bm25.infer("some_question", limit:int=some_limit)
+```
+
+5. For test
+```
+bm25.test(limit:int=some_limit)
 ```
