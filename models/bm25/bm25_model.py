@@ -11,8 +11,8 @@ from ..utils import bm25_preprocess, RetrievalMetrics, logger
 class BM25:
     def __init__(
             self, 
-            path_to_full_corpus:str="models/bm25/processed_data/bm25_full_corpus.h5", 
-            path_to_only_text:str="models/bm25/processed_data/bm25_only_text",
+            path_to_full_corpus:str="models/bm25/new_processed_data/bm25_full_corpus.h5", 
+            path_to_only_text:str="models/bm25/new_processed_data/bm25_only_text",
             k1=1.2,
             b=0.65
         ):
@@ -147,7 +147,7 @@ class BM25:
                 logger.info("Rank {}: {}".format(i+1, doc))
         return top_k_relevance
 
-    def test(self, path_to_test_qna:str="models/bm25/processed_data/bm25_test_qna.h5", limit:int=10):
+    def test(self, path_to_test_qna:str="models/bm25/new_processed_data/bm25_test_qna.h5", limit:int=10):
         """
         Test the BM25 model on a QnA dataset.
         :param path_to_test_qna: str
@@ -168,11 +168,11 @@ class BM25:
             os.makedirs("models/bm25/output")
             logger.info("Created directory: models/bm25/output")
         
-        full_retrieval_results_path = f"models/bm25/output/{limit}_bm25_test_results_full.json"
-        truncated_retrieval_results_path = f"models/bm25/output/{limit}_bm25_test_results_truncated.json"
-        distinct_retrieval_results_path = f"models/bm25/output/{limit}_bm25_test_results_distinct.json"
+        full_retrieval_results_path = f"models/bm25/output/{limit}_bm25_new_test_results_full.json"
+        truncated_retrieval_results_path = f"models/bm25/output/{limit}_bm25_test_new_results_truncated.json"
+        distinct_retrieval_results_path = f"models/bm25/output/{limit}_bm25_test_new_results_distinct.json"
 
-        true_results_path = "data/true_results/true_test_results.json"
+        true_results_path = "/Users/nguyenbathiem/Coding/Sesmester VI/NLP/Legal-Information-Retrieval-1/data/true_results/new_test_true_results.json"
 
         # ---------- Save full retrieval results ----------
         with open(full_retrieval_results_path, "w") as f:

@@ -8,10 +8,11 @@ from ..utils import bm25_preprocess, list_stopwords, logger
 class BM25Preprocessor:
     def __init__(self):
         self.root_dir = os.getcwd()
-        self.processed_data_dir = os.getcwd() + "/models/bm25/processed_data"
+        print(self.root_dir)
+        self.processed_data_dir = os.getcwd() + "/models/bm25/new_processed_data"
         if not os.path.exists(self.processed_data_dir):
             os.makedirs(self.processed_data_dir)
-            logger.info("Created directory: models/bm25/processed_data")
+            logger.info("Created directory: models/bm25/new_processed_data")
 
     def preprocess_corpus(self, raw_corpus_path:str, skip_word_segment:bool=True):
         """
@@ -22,6 +23,7 @@ class BM25Preprocessor:
 
         os.chdir(self.root_dir)
         corpus_path = os.getcwd() + raw_corpus_path
+        print(corpus_path)
         os.chdir(self.processed_data_dir)
 
         # -------------------- Get bm25_full_corpus.h5: all corpus tabular information --------------------
