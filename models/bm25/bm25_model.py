@@ -14,7 +14,7 @@ class BM25:
             path_to_full_corpus:str="models/bm25/processed_data/bm25_full_corpus.h5", 
             path_to_only_text:str="models/bm25/processed_data/bm25_only_text",
             k1=1.2,
-            b=0.75
+            b=0.65
         ):
 
         self.k1 = k1
@@ -167,9 +167,10 @@ class BM25:
         if not os.path.exists("models/bm25/output"):
             os.makedirs("models/bm25/output")
             logger.info("Created directory: models/bm25/output")
-        full_retrieval_results_path = "models/bm25/output/bm25_test_results_full.json"
-        truncated_retrieval_results_path = "models/bm25/output/bm25_test_results_truncated.json"
-        distinct_retrieval_results_path = "models/bm25/output/bm25_test_results_distinct.json"
+        
+        full_retrieval_results_path = f"models/bm25/output/{limit}_bm25_test_results_full.json"
+        truncated_retrieval_results_path = f"models/bm25/output/{limit}_bm25_test_results_truncated.json"
+        distinct_retrieval_results_path = f"models/bm25/output/{limit}_bm25_test_results_distinct.json"
 
         true_results_path = "data/true_results/true_test_results.json"
 
