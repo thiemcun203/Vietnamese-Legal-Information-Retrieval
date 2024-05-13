@@ -126,7 +126,7 @@ class RetrievalMetrics:
                 ap += num_relevant_articles / (i+1)
         return ap / len(true_relevant_articles)
 
-    def get_map(self, k:int=1)->float:
+    def get_map_at_k(self, k:int=1)->float:
         
         map = 0
         for question_id in self.retrieval_results:

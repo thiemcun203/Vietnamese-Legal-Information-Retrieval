@@ -9,7 +9,7 @@ from transformers import AutoTokenizer, AutoModel
 import os, json, sys
 from dotenv import load_dotenv
 sys.path.append(os.getcwd())
-from metrics import *
+from models.utils.metrics import *
 dotenv_path = os.getcwd() + '/.env'
 load_dotenv(dotenv_path)
 import time
@@ -75,7 +75,6 @@ class BiEncoder:
                             query_vector=self.encode([segmented_question])[0],
                             limit=topk,
                         )
-                print(results)
                 break
             except:
                 time.sleep(wait)

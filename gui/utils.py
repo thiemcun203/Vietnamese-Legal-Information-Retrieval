@@ -64,6 +64,8 @@ def find_documents(retrived_id = {'155/2015/tt-btc%2': [144554, 144566], '54/201
         documents[id]['annotations'] = annotations
     return documents
 
+
+
 if __name__ == "__main__":
     x = find_documents()['155/2015/tt-btc%2']
     from text_highlighter import text_highlighter

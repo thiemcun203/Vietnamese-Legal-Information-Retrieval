@@ -16,6 +16,8 @@ from google.oauth2 import service_account
 import json, sys, os
 sys.path.append(os.getcwd())
 from  models.biencoder_model.BiEncoder  import BiEncoder
+from models.bm25.bm25_model import BM25
+from models.hybrid_model.hybrid import Hybrid
 from vncorenlp import VnCoreNLP
 from utils import *
 from text_highlighter import text_highlighter
@@ -36,21 +38,33 @@ def connect_user():
 records = connect_user()
 
 @st.cache_resource 
-def init_model():
+def init_BiEncoder():
     return BiEncoder(
-            url = st.secrets["BKAI_URL"],
-            api_key = st.secrets["BKAI_APIKEY"],
+            url = st.secrets["SELF_HOST_URL"],
+            api_key = st.secrets["SELF_HOST_APIKEY"],
             collection_name = st.secrets["BKAI_COLLECTION_NAME"],
             old_checkpoint = 'bkai-foundation-models/vietnamese-bi-encoder',
             tunned_checkpoint = '/kaggle/input/checkpoint-1/best_checkpoint.pt',
             tunned = False,
         )
+@st.cache_resource 
+def init_BM25():
+    bm25 =  BM25(k1=1.2, b=0.65)
+    bm25.fit()
+    return bm25
     
-biencoder = init_model()
+biencoder = init_BiEncoder()
+bm25  = init_BM25()
+
+@st.cache_resource 
+def init_hybrid():
+    return Hybrid(biencoder, bm25, const = 60, biencoder_rate = 1.75, bm25_rate = 1)
+
+hybrid = init_hybrid()
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv(os.getcwd() + '/data/test_qna.csv')
+    df = pd.read_csv(os.getcwd() + '/data/qna/test_qna.csv')
     return df
 df = load_data()
 if 'seed' not in st.session_state:
@@ -91,11 +105,13 @@ if 'results' not in st.session_state:
 st.subheader("LegalBot🤖")
 option = st.selectbox(
     'Model Name',
-    ('BKAI-Model', 'Finetuned-Model'))
+    ('BKAI-Model', 'BM25-Model', 'Hybrid-Model'))
 if option == 'BKAI-Model':
-    biencoder = init_model()
-elif option == 'Finetuned-Model':
-    biencoder = init_model()
+    model = biencoder
+elif option == 'BM25-Model':
+    model = bm25
+elif option == 'Hybrid-Model':
+    model = hybrid
     
 first_message = "Tôi có thể giúp gì cho bạn?"
 
@@ -114,10 +130,6 @@ if prompt := st.chat_input():
         with st.chat_message("user", avatar="😎"):
             st.write(prompt)
             
-# if st.button('Refresh Sugesstions'):
-#     st.session_state.seed = np.random.randint(0, 1000)
-
-# if st.session_state.messages[-1]["role"] == "assistant":
 if st.button(questions_sample[0]):
     prompt = questions_sample[0]
     st.session_state.messages.append({"role": "user", "content": copy.deepcopy(questions_sample[0])})
@@ -144,18 +156,22 @@ if st.session_state.messages[-1]["role"] != "assistant":
             # segmented_question = " ".join(rdrsegmenter.tokenize(prompt)[0])
             segmented_question = tokenize(prompt.encode('utf-8').decode('utf-8'))
             print(segmented_question)
-            results = biencoder.query(segmented_question = segmented_question, topk = 10)
+            results = model.query(segmented_question = segmented_question)
+            
             results = find_documents(results)
-
+            
+            # context = ''
+            # for id in results:
+            #     context += f"{results[id]['full_content']}\n"
             context = [results[id]['splitted_info'] for id in results]
+
+            print(context)
             response = conversation.predict(input=f"Context:\n {context} \n\n Query:\n{prompt}")
             st.write(response) 
             
             st.session_state.seed += np.random.randint(0, 1000)
             st.session_state.results = results
             
-        
-
         
     message = {"role": "assistant", "content": response}
     st.session_state.messages.append(message)
