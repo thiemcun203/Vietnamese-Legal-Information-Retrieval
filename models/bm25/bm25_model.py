@@ -127,7 +127,7 @@ class BM25:
     
     def infer(self, query:str, limit:int=10, preprocess_query=True, log_results=True):
         """
-        Infer the top k most relevant documents to a query.
+        Infer the top k most relevant splits to a query.
         :param query: string
         :param limit: int
         :param preprocess_query: bool: whether to preprocess the query. For example, in .test(), set this to False.
@@ -141,9 +141,8 @@ class BM25:
             top_k_relevance.append(self.split_lookup[idx])
         
         if log_results:
-            logger.info("Inferred top {} documents for query: {}".format(limit, query))
-        for i, doc in enumerate(top_k_relevance):
-            if log_results:
+            logger.info("BM25: Inferred top {} documents for query: {}".format(limit, query))
+            for i, doc in enumerate(top_k_relevance):
                 logger.info("Rank {}: {}".format(i+1, doc))
         return top_k_relevance
 
