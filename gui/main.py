@@ -144,14 +144,16 @@ if st.button(questions_sample[2]):
 
 with st.sidebar:
     # for id in st.session_state.results:
-    for doc_key, doc_info in st.session_state.results.items():
-
-        labels = [("rank_1", "#7F5A3E"), ("rank_2", "#DAAC8D"),  ("rank_3", "#FED8B1"),  ("rank_4", "#FDEAD6"),  ("rank_5", "#FFF8F1"),  ("rank_6", "#FFF8F1"),  ("rank_7", "#FFF8F1"),("rank_8", "#FFF8F1"),  ("rank_9", "#FDFDFD"),  ("rank_10", "#FDFDFD")]
+    labels = [[("rank_1", "#7F5A3E"), ("rank_2", "#C7936C"),  ("rank_3", "#FED8B1"),  ("rank_4", "#FDEAD6"),  ("rank_5", "#FFF8F1"),  ("rank_6", "#FFF8F1"),  ("rank_7", "#FFF8F1"),("rank_8", "#FFF8F1"),  ("rank_9", "#FDFDFD"),  ("rank_10", "#FDFDFD")],
+              [("rank_1", "#FED8B1"), ("rank_2", "#FDEAD6"),  ("rank_3", "#FFF8F1"),  ("rank_4", "#FFF8F1"),  ("rank_5", "#FFF8F1"),  ("rank_6", "#FFF8F1"),  ("rank_7", "#FFF8F1"),("rank_8", "#FFF8F1"),  ("rank_9", "#FDFDFD"),  ("rank_10", "#FDFDFD")]
+    ]
+    
+    for i, (doc_key, doc_info) in enumerate(st.session_state.results.items()):
 
         # Displaying the highlighted text
         text_highlighter(
             text=doc_info['full_content'],
-            labels=labels,
+            labels=labels[i],
             annotations=doc_info['annotations'],
         )
 
