@@ -15,11 +15,12 @@ dotenv_path = os.getcwd() + '/.env'
 import time
 load_dotenv(dotenv_path)
 openai.api_key  = os.environ["OPENAI_APIKEY"]
-
+ 
 with open(os.getcwd()+'/data/stopwords.txt', 'r', encoding="utf-8") as f:
     list_stopwords = f.read().splitlines()
 
-sorry = "Xin lỗi, em chưa có thông tin và không thể trả lời câu hỏi này"
+sorry = "xin lỗi, tôi không biết, không thể trả lời câu hỏi này"
+
 def clean_text(text):
     text = re.sub('<.*?>', '', text).strip()
     text = re.sub(r'(\s)+', r'\1', text)
@@ -43,7 +44,7 @@ def remove_stopwords(text, stopwords = list_stopwords):
 def get_embedding(text, model="text-embedding-3-large"):
     return openai.Embedding.create(input=text, model=model)['data'][0]['embedding']
 
-def get_response(pr):
+def get_response(pr, model_name):
     model_name = "gpt-3.5-turbo"
     # model_name = "gpt-4"
     retries= 2
@@ -89,12 +90,14 @@ def tokenize_vietnamese(text):
     tokens = [token.strip().lower() for token in text.split()]
     return tokens
 
-def get_rank(model, client, question, response, results, prompt, df_id, id_lst, limit=10, rerank=True) -> str:
+def get_rank(model, client, question, response, results, prompt, df_id, id_lst, sorry_vector, limit=10, rerank=True) -> str:
     if id_lst == []:
         return {}
-    embedding = model.encode([tokenize(response)])[0]
-    print(tokenize(response))
     
+    embedding = model.encode([tokenize(response)])[0]
+    if cosine_similarity([sorry_vector], [embedding])[0][0] > 0.9:
+        return {}
+
     def replace_fines(child_str, parent_str):
         # Step 1: Extract monetary amounts from the parent string
         amounts = re.findall(r'\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)? đồng', parent_str)
@@ -180,7 +183,7 @@ def get_rank(model, client, question, response, results, prompt, df_id, id_lst, 
             content_results[key] = [r['content']]
             k+=1
         else:
-            if r['score']/df['score'].iloc[k-1] > 0.89:
+            if r['score']/df['score'].iloc[k-1] > 0.7:
                 content_results[key].append(r['content'])
                 k+=1
             else:

@@ -46,6 +46,8 @@ def init_BiEncoder():
             old_checkpoint = 'bkai-foundation-models/vietnamese-bi-encoder',
             tunned_checkpoint = '/kaggle/input/checkpoint-1/best_checkpoint.pt',
             tunned = False,
+            model_name = 'gpt-3.5-turbo',
+            # model_name = 'gpt-4',
         )
 # @st.cache_resource 
 # def init_BM25():

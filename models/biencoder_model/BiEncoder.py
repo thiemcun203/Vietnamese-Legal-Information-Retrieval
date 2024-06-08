@@ -24,6 +24,7 @@ class BiEncoder:
                  old_checkpoint = 'bkai-foundation-models/vietnamese-bi-encoder',
                  tunned_checkpoint = '/kaggle/input/checkpoint-1/best_checkpoint.pt',
                  tunned = False,
+                 model_name = 'gpt-3.5-turbo',
                 ):
         #-----------Setup connection------#
         self.url = url
@@ -48,12 +49,14 @@ class BiEncoder:
             self.device = torch.device("cpu")
 
         #-------Model--------#
+        self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(old_checkpoint)
         self.model = AutoModel.from_pretrained(old_checkpoint).to(self.device)
         if tunned == True:
             checkpoint = torch.load(tunned_checkpoint, map_location=self.device)
             self.model.load_state_dict(checkpoint['model'])
             self.model.to(self.device)
+        self.sorry_vector = self.encode([tokenize("xin lỗi, tôi không biết, không thể trả lời câu hỏi này, không thể trả lời câu hỏi cá nhân hoặc không liên quan đến pháp luật")])[0]
 
     def encode(self, segmented_questions):
         encoded_input = self.tokenizer(segmented_questions, padding=True, truncation=True, return_tensors='pt', max_length=256)
@@ -73,7 +76,7 @@ class BiEncoder:
     
     def query(self, question = 'khái_niệm quỹ đại_chúng', topk = 10, LLM = True):
         t = 0
-        while True and t < 5:
+        while True and t < 3:
             wait = 0.1
             while True:
                 try:
@@ -115,17 +118,19 @@ class BiEncoder:
 {article['title']}                  
 {article['text']}\n'''    
                                             id_lst += df_id.loc[df_id['law_article_id'] == ap, 'index'].tolist()
-                print(id_lst)
-                print(appear)
+
                 num_try = 0
                 print('---------------------Documents------------------')
                 print(context)
+                if context == '':
+                    response = "Tôi không biết."
+                    break
                 while True:
                     try:
                         context_lst = [i for i in context.split('Nghị định') if i != ''][:num_docs]
                         context = 'Nghị định'.join(context_lst)
                         f_prompt = prompt.format(context, question)
-                        response = get_response(f_prompt)
+                        response = get_response(f_prompt, model_name = self.model_name)
                         break
                     except Exception as e:
                         if 'maximum context length' in str(e):
@@ -138,17 +143,20 @@ class BiEncoder:
                             
                 if "không biết" in response or 'Xin lỗi' in response:
                     seed +=2
-                    id_lst = []
+                    # id_lst = []
                     continue
                 break
                     
             print(response)
+            print(id_lst)
+            print(appear)
             if "không biết" not in response and 'Xin lỗi' not in response:
                 break
+            if context == '': #can be comment for retry
+                break
             t+=1
-        print(id_lst)
-        print(appear)
-        return get_rank(self, self.client, question, response, results, f_prompt, df_id,  id_lst, limit = topk, rerank = LLM), response
+        
+        return get_rank(self, self.client, question, response, results, f_prompt, df_id,  id_lst, self.sorry_vector, limit = topk, rerank = LLM), response
         
     def query_lst(self, segmented_questions = ['khái_niệm quỹ đại_chúng', "hồ_sơ thành_lập quán karaoke bao_gồm những gì ?"], topk = 10):
         vectors = self.encode(segmented_questions)
