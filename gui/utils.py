@@ -25,12 +25,10 @@ def find_index(text1, text2):
     start_index = ending_index_text1 - max_length + 1
     if max_length == 0:
         return -1, -1
-    if len(text2) - 10 > max_length:
-        return -1, -1
-    # Return the start and end indices along with the substring
     return start_index, ending_index_text1
-
-    return start_index, end_index
+def calculate_highlight_tag(rank, total):
+    # Define tags based on rank for simplicity
+    return f"rank_{rank+1}"
 
 def find_documents(retrived_id = {'155/2015/tt-btc%2': [144554, 144566], '54/2019/qh14%4': [311550], '96/2020/tt-btc%3': [385427], '54/2019/qh14%110': [312460, 312459, 312467, 312471], '54/2019/qh14%124': [312585], '54/2019/qh14%108': [312451]}):
     """
@@ -38,7 +36,7 @@ def find_documents(retrived_id = {'155/2015/tt-btc%2': [144554, 144566], '54/201
     """
     with open(os.getcwd() + '/data/corpus/legal_corpus.json', 'r') as f:
         law_articles = json.load(f)
-    splitted_corpus  = pd.read_csv(os.getcwd() + '/data/corpus/splitted_legal_corpus_id.csv')
+    # splitted_corpus  = pd.read_csv(os.getcwd() + '/data/corpus/splitted_legal_corpus_id.csv')
     
     documents = {}
     for id in retrived_id:
@@ -52,15 +50,15 @@ def find_documents(retrived_id = {'155/2015/tt-btc%2': [144554, 144566], '54/201
 {article['title']}
 {article['text']}'''    
                         
+
         annotations = []
-        splitted_info = ''
-        for doc_id in retrived_id[id]:
-            retrieved_split =  splitted_corpus.loc[doc_id]['content']
-            splitted_info += f'{retrieved_split}\n'
-            start_index, end_index = find_index(documents[id]['full_content'].lower(), splitted_corpus.loc[doc_id]['content'])
+        doc_ids = retrived_id[id]
+        
+        for rank, doc_id in enumerate(doc_ids):
+            tag = calculate_highlight_tag(rank, len(doc_ids))
+            start_index, end_index = find_index(documents[id]['full_content'].lower(), doc_id.lower())
             if start_index != -1:
-                annotations.append({"start": start_index, "end": end_index, "tag": "Suggestions"})
-        documents[id]['splitted_info'] = splitted_info
+                annotations.append({"start": start_index, "end": end_index, "tag": tag})
         documents[id]['annotations'] = annotations
     return documents
 

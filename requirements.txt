@@ -9,9 +9,9 @@ google-cloud-firestore
 torch
 qdrant-client
 transformers
-wandb
 pandas
 scikit-learn
 vncorenlp
 text-highlighter
 pyvi
+rank-bm25

@@ -6,12 +6,15 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import *
 from vncorenlp import VnCoreNLP
 from transformers import AutoTokenizer, AutoModel
+import ast
 import os, json, sys
 from dotenv import load_dotenv
 sys.path.append(os.getcwd())
 from models.utils.metrics import *
+from models.utils.process import *
 dotenv_path = os.getcwd() + '/.env'
 load_dotenv(dotenv_path)
+df_id = pd.read_csv(os.getcwd() + '/data/corpus/legal_corpus_id.csv')
 import time
 class BiEncoder:
     def __init__(self, 
@@ -34,10 +37,12 @@ class BiEncoder:
         #-------Setup device--------#
         if torch.cuda.is_available():
             print("Using GPU")
-            self.device = torch.device('cuda')
+            # self.device = torch.device('cuda')
+            self.device = torch.device("cpu")
         elif torch.backends.mps.is_built():
             print("Using MPS")
-            self.device = torch.device("mps")
+            # self.device = torch.device("mps")
+            self.device = torch.device("cpu")
         else:
             print("Using CPU")
             self.device = torch.device("cpu")
@@ -66,30 +71,84 @@ class BiEncoder:
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
         return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
     
-    def query(self, segmented_question = 'khái_niệm quỹ đại_chúng', topk = 10):
-        wait = 0.1
-        while True:
-            try:
-                results = self.client.search(
-                            collection_name = self.collection_name,
-                            query_vector=self.encode([segmented_question])[0],
-                            limit=topk,
-                        )
+    def query(self, question = 'khái_niệm quỹ đại_chúng', topk = 10, LLM = True):
+        t = 0
+        while True and t < 5:
+            wait = 0.1
+            while True:
+                try:
+                    print('Searching...')
+                    results = self.client.search(
+                                collection_name = self.collection_name,
+                                query_vector=self.encode([tokenize(question)])[0],
+                                limit=topk + t*topk,
+                                with_vectors=True,
+                            )
+                    results = results[t*topk:topk + t*topk]
+                    break
+                except:
+                    time.sleep(wait)
+                    wait*=2
+                    
+                    
+            response = ""
+            appear = []
+            num_docs = 2
+            seed = 0
+            while LLM:
+                context = ''
+                with open(os.getcwd() + '/data/corpus/legal_corpus.json', 'r') as f:
+                    law_articles = json.load(f)
+                
+                id_lst = []
+                for point in results:
+                    law_id, article_id = point.payload['law_article_id']['law_id'], point.payload['law_article_id']['article_id']
+                    for law in law_articles:
+                        if law['law_id'] == law_id:
+                            for article in law['articles']:
+                                if article['article_id'] == article_id:
+                                    ap = f'{law_id}%{article_id}'
+                                    if ap not in appear :
+                                        if len(appear[seed:]) < num_docs:
+                                            appear.append(ap)
+                                            context += f'''Nghị định {law_id} - {article_id}
+{article['title']}                  
+{article['text']}\n'''    
+                                            id_lst += df_id.loc[df_id['law_article_id'] == ap, 'index'].tolist()
+                print(id_lst)
+                print(appear)
+                num_try = 0
+                print('---------------------Documents------------------')
+                print(context)
+                while True:
+                    try:
+                        context_lst = [i for i in context.split('Nghị định') if i != ''][:num_docs]
+                        context = 'Nghị định'.join(context_lst)
+                        f_prompt = prompt.format(context, question)
+                        response = get_response(f_prompt)
+                        break
+                    except Exception as e:
+                        if 'maximum context length' in str(e):
+                            num_docs -= 1
+                            print('retrying...')
+                            num_try += 1
+                            if num_try == 3 or num_docs == 0:
+                                response = "Tôi không biết."
+                                break
+                            
+                if "không biết" in response or 'Xin lỗi' in response:
+                    seed +=2
+                    id_lst = []
+                    continue
                 break
-            except:
-                time.sleep(wait)
-                wait*=2
-        
-        content_results = {}
-        for point in results:
-            law_id = point.payload['law_article_id']['law_id']
-            article_id = point.payload['law_article_id']['article_id']
-            key = law_id + '%' + article_id
-            if key not in content_results:
-                content_results[key] = [point.id]
-            else:  
-                content_results[key].append(point.id)
-        return content_results
+                    
+            print(response)
+            if "không biết" not in response and 'Xin lỗi' not in response:
+                break
+            t+=1
+        print(id_lst)
+        print(appear)
+        return get_rank(self, self.client, question, response, results, f_prompt, df_id,  id_lst, limit = topk, rerank = LLM), response
         
     def query_lst(self, segmented_questions = ['khái_niệm quỹ đại_chúng', "hồ_sơ thành_lập quán karaoke bao_gồm những gì ?"], topk = 10):
         vectors = self.encode(segmented_questions)
@@ -143,14 +202,20 @@ if __name__ == "__main__":
                  tunned = False,
                 )
 
-    rdrsegmenter = VnCoreNLP("vncorenlp/VnCoreNLP-1.1.1.jar", annotators="wseg", max_heap_size='-Xmx500m') 
-    question = 'Điểm tóan thi được mấy điểm?'
-    segmented_question = " ".join(rdrsegmenter.tokenize(question)[0])
+    # rdrsegmenter = VnCoreNLP("vncorenlp/VnCoreNLP-1.1.1.jar", annotators="wseg", max_heap_size='-Xmx500m') 
+    # question = 'Điểm tóan thi được mấy điểm?'
+    # segmented_question = " ".join(rdrsegmenter.tokenize(question)[0])
     # segmented_question = 'thông_tư này hướng_dẫn tuần_tra , canh_gác bảo_vệ đê_điều trong mùa lũ đối_với các tuyến đê sông được phân_loại , phân_cấp theo quy_định tại điều 4 của luật đê_điều .'
+    # segmented_question = 'Mức phạt khi điều khiển xe ô tô không chú ý quan sát gây tai nạn giao thông' #'Không tuân thủ đúng quy trình, quy chuẩn kỹ thuật trong kiểm định xe cơ giới bị phạt bao nhiêu tiền?'#
+    # segmented_question = 'Trách nhiệm của Ngân hàng Nhà nước về quản lý và phát triển công nghiệp an ninh được quy định như thế nào?'
+    # segmented_question = 'Lập danh mục thủ tục hành chính ưu tiên thực hiện trên môi trường điện tử được thực hiện thế nào?'
+    # segmented_question = 'Tự ý di chuyển vị trí biển báo “khu vực biên giới” bị phạt thế nào?'
+    # segmented_question = 'Mức phạt khi điều khiển xe ô tô không lắp đủ bánh lốp theo nghị định 100/2019/NĐ-CP?'
+    segmented_question = 'Chủ tàu cá sử dụng tàu cá có chiều dài là 18.5 m khai thác thủy sản mà không có Giấy phép khai thác thủy sản sẽ bị xử phạt như thế nào?'
     print(segmented_question)
     t1 = time.time()
     # for i in range(4):
-    print(biencoder.query(segmented_question = segmented_question, topk = 10))
+    print(biencoder.query(question = segmented_question, topk = 10))
     # print(biencoder.query_lst())
     t2 = time.time()
     print('time', t2-t1)

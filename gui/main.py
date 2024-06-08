@@ -47,24 +47,24 @@ def init_BiEncoder():
             tunned_checkpoint = '/kaggle/input/checkpoint-1/best_checkpoint.pt',
             tunned = False,
         )
-@st.cache_resource 
-def init_BM25():
-    bm25 =  BM25(k1=1.2, b=0.65)
-    bm25.fit()
-    return bm25
+# @st.cache_resource 
+# def init_BM25():
+#     bm25 =  BM25(k1=1.2, b=0.65)
+#     bm25.fit()
+#     return bm25
     
 biencoder = init_BiEncoder()
-bm25  = init_BM25()
+# bm25  = init_BM25()
 
-@st.cache_resource 
-def init_hybrid():
-    return Hybrid(biencoder, bm25, const = 60, biencoder_rate = 1.75, bm25_rate = 1)
+# @st.cache_resource 
+# def init_hybrid():
+#     return Hybrid(biencoder, bm25, const = 60, biencoder_rate = 1.75, bm25_rate = 1)
 
-hybrid = init_hybrid()
+# hybrid = init_hybrid()
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv(os.getcwd() + '/data/qna/test_qna.csv')
+    df = pd.read_csv(os.getcwd() + '/data/qna/best_test_qna.csv')
     return df
 df = load_data()
 if 'seed' not in st.session_state:
@@ -105,13 +105,13 @@ if 'results' not in st.session_state:
 st.subheader("LegalBot🤖")
 option = st.selectbox(
     'Model Name',
-    ('BKAI-Model', 'BM25-Model', 'Hybrid-Model'))
-if option == 'BKAI-Model':
+    ('Hybrid-Model', '')) # , 'BM25-Model', 'BKAI-Model'
+if option == 'Hybrid-Model':
     model = biencoder
-elif option == 'BM25-Model':
-    model = bm25
-elif option == 'Hybrid-Model':
-    model = hybrid
+# elif option == 'BM25-Model':
+#     model = bm25
+# elif option == 'Hybrid-Model':
+#     model = hybrid
     
 first_message = "Tôi có thể giúp gì cho bạn?"
 
@@ -141,37 +141,46 @@ if st.button(questions_sample[2]):
     st.session_state.messages.append({"role": "user", "content": copy.deepcopy(questions_sample[2])})
 
 with st.sidebar:
-    for id in st.session_state.results:
+    # for id in st.session_state.results:
+    for doc_key, doc_info in st.session_state.results.items():
+
+        labels = [("rank_1", "#7F5A3E"), ("rank_2", "#DAAC8D"),  ("rank_3", "#FED8B1"),  ("rank_4", "#FDEAD6"),  ("rank_5", "#FFF8F1"),  ("rank_6", "#FFF8F1"),  ("rank_7", "#FFF8F1"),("rank_8", "#FFF8F1"),  ("rank_9", "#FDFDFD"),  ("rank_10", "#FDFDFD")]
+
+        # Displaying the highlighted text
         text_highlighter(
-            text=st.session_state.results[id]['full_content'],
-            labels=[("Suggestions", "C0D6E8")],
-            annotations=st.session_state.results[id]['annotations'],
+            text=doc_info['full_content'],
+            labels=labels,
+            annotations=doc_info['annotations'],
         )
-        
+
+
 # Generate a new response if last message is not from assistant
 if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message("assistant", avatar="🤖"):
         with st.spinner("Thinking..."):
             # rdrsegmenter = VnCoreNLP("vncorenlp/VnCoreNLP-1.1.1.jar", annotators="wseg", max_heap_size='-Xmx500m') 
             # segmented_question = " ".join(rdrsegmenter.tokenize(prompt)[0])
-            segmented_question = tokenize(prompt.encode('utf-8').decode('utf-8'))
-            print(segmented_question)
-            results = model.query(segmented_question = segmented_question)
-            
+            # segmented_question = prompt.encode('utf-8').decode('utf-8')
+            segmented_question = prompt
+            t1 = time.time()
+            print('question: ', segmented_question)
+            results, response = model.query(question = segmented_question, LLM = True)
+
             results = find_documents(results)
-            
+
             # context = ''
             # for id in results:
             #     context += f"{results[id]['full_content']}\n"
-            context = [results[id]['splitted_info'] for id in results]
+            # context = [results[id]['splitted_info'] for id in results]
 
-            print(context)
-            response = conversation.predict(input=f"Context:\n {context} \n\n Query:\n{prompt}")
+            # print(context)
+            # response = conversation.predict(input=f"Context:\n {context} \n\n Query:\n{prompt}")
             st.write(response) 
             
             st.session_state.seed += np.random.randint(0, 1000)
             st.session_state.results = results
-            
+            t2 = time.time()
+            print("Time: ", t2 - t1)
         
     message = {"role": "assistant", "content": response}
     st.session_state.messages.append(message)
@@ -180,7 +189,7 @@ if st.session_state.messages[-1]["role"] != "assistant":
             "timestamp": time.time(), #dt_object = datetime.fromtimestamp(timestamp)
             "user_message": st.session_state.messages[-2]["content"],
             "bot_message": st.session_state.messages[-1]["content"],
-            "context_id":context,
+            "context_id":str(results),
             "like": None,
             "feedback": None,
             "feedback_time": None
