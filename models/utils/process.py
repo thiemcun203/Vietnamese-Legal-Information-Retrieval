@@ -44,8 +44,8 @@ def get_embedding(text, model="text-embedding-3-large"):
     return openai.Embedding.create(input=text, model=model)['data'][0]['embedding']
 
 def get_response(pr):
-    # model_name = "gpt-3.5-turbo"
-    model_name = "gpt-4"
+    model_name = "gpt-3.5-turbo"
+    # model_name = "gpt-4"
     retries= 2
     while retries > 0:    
         try: 
