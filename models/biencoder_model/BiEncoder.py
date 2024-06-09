@@ -74,8 +74,9 @@ class BiEncoder:
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
         return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
     
-    def query(self, question = 'khái_niệm quỹ đại_chúng', topk = 10, LLM = True):
+    def query(self, df,  question = 'khái_niệm quỹ đại_chúng', topk = 10, LLM = True):
         t = 0
+        embed = self.encode([tokenize(question.lower())])[0]
         while True and t < 3:
             wait = 0.1
             while True:
@@ -83,7 +84,7 @@ class BiEncoder:
                     print('Searching...')
                     results = self.client.search(
                                 collection_name = self.collection_name,
-                                query_vector=self.encode([tokenize(question)])[0],
+                                query_vector=embed,
                                 limit=topk + t*topk,
                                 with_vectors=True,
                             )
@@ -155,8 +156,21 @@ class BiEncoder:
             if context == '': #can be comment for retry
                 break
             t+=1
+            
+            
+        related_question = self.client.search(
+                                collection_name = 'qna_embedding_legal_1',
+                                query_vector=embed,
+                                limit=60,
+                                with_payload=True,
+                            )
+        ques_lst = ["".join(point.id.split("-")) for point in related_question]
+        ques_lst = [
+            df.loc[df['question_id'] == id, 'question'].iloc[0]
+            for id in ques_lst  if not df.loc[df['question_id'] == id, 'question'].empty
+        ][:15]
         
-        return get_rank(self, self.client, question, response, results, f_prompt, df_id,  id_lst, self.sorry_vector, limit = topk, rerank = LLM), response
+        return get_rank(self, self.client, question, response, results, f_prompt, df_id,  id_lst, self.sorry_vector, limit = topk, rerank = LLM), response, ques_lst
         
     def query_lst(self, segmented_questions = ['khái_niệm quỹ đại_chúng', "hồ_sơ thành_lập quán karaoke bao_gồm những gì ?"], topk = 10):
         vectors = self.encode(segmented_questions)
@@ -219,11 +233,13 @@ if __name__ == "__main__":
     # segmented_question = 'Lập danh mục thủ tục hành chính ưu tiên thực hiện trên môi trường điện tử được thực hiện thế nào?'
     # segmented_question = 'Tự ý di chuyển vị trí biển báo “khu vực biên giới” bị phạt thế nào?'
     # segmented_question = 'Mức phạt khi điều khiển xe ô tô không lắp đủ bánh lốp theo nghị định 100/2019/NĐ-CP?'
-    segmented_question = 'Chủ tàu cá sử dụng tàu cá có chiều dài là 18.5 m khai thác thủy sản mà không có Giấy phép khai thác thủy sản sẽ bị xử phạt như thế nào?'
+    # segmented_question = 'Chủ tàu cá sử dụng tàu cá có chiều dài là 18.5 m khai thác thủy sản mà không có Giấy phép khai thác thủy sản sẽ bị xử phạt như thế nào?'
+    segmented_question = 'Thực hiện không đúng quy định về phát bưu gửi bị phạt bao nhiêu?'
+    df = pd.read_csv(os.getcwd() + '/data/qna/best_test_qna.csv')
     print(segmented_question)
     t1 = time.time()
     # for i in range(4):
-    print(biencoder.query(question = segmented_question, topk = 10))
+    print(biencoder.query(df,question = segmented_question, topk = 10))
     # print(biencoder.query_lst())
     t2 = time.time()
     print('time', t2-t1)

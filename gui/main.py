@@ -72,7 +72,8 @@ df = load_data()
 if 'seed' not in st.session_state:
     st.session_state.seed = np.random.randint(0, 101)
 # Randomly pick 3 unique questions
-questions_sample = df['question'].sample(n=3, random_state=np.random.RandomState(st.session_state.seed)).tolist()
+if 'questions_sample' not in st.session_state:
+    st.session_state.questions_sample = df['question'].sample(n=3, random_state=np.random.RandomState(st.session_state.seed)).tolist()
 
 # Setup memorize the conversation
 if 'buffer_memory' not in st.session_state:
@@ -99,8 +100,8 @@ if 'data' not in st.session_state:
 if 'double' not in st.session_state: #fix double bug
     st.session_state.double = 0
 
-if 'results' not in st.session_state:
-    st.session_state.results = {}
+if 'documents' not in st.session_state:
+    st.session_state.documents = {}
 
 
 # setup UI
@@ -132,29 +133,30 @@ if prompt := st.chat_input():
         with st.chat_message("user", avatar="😎"):
             st.write(prompt)
             
-if st.button(questions_sample[0]):
-    prompt = questions_sample[0]
-    st.session_state.messages.append({"role": "user", "content": copy.deepcopy(questions_sample[0])})
-if st.button(questions_sample[1]):
-    prompt = questions_sample[1]
-    st.session_state.messages.append({"role": "user", "content": copy.deepcopy(questions_sample[1])})
-if st.button(questions_sample[2]):
-    prompt = questions_sample[2]
-    st.session_state.messages.append({"role": "user", "content": copy.deepcopy(questions_sample[2])})
+if st.button(st.session_state.questions_sample[0]):
+    prompt = st.session_state.questions_sample[0]
+    st.session_state.messages.append({"role": "user", "content": copy.deepcopy(st.session_state.questions_sample[0])})
+if st.button(st.session_state.questions_sample[1]):
+    prompt = st.session_state.questions_sample[1]
+    st.session_state.messages.append({"role": "user", "content": copy.deepcopy(st.session_state.questions_sample[1])})
+if st.button(st.session_state.questions_sample[2]):
+    prompt = st.session_state.questions_sample[2]
+    st.session_state.messages.append({"role": "user", "content": copy.deepcopy(st.session_state.questions_sample[2])})
 
 with st.sidebar:
-    # for id in st.session_state.results:
-    labels = [[("rank_1", "#7F5A3E"), ("rank_2", "#C7936C"),  ("rank_3", "#FED8B1"),  ("rank_4", "#FDEAD6"),  ("rank_5", "#FFF8F1"),  ("rank_6", "#FFF8F1"),  ("rank_7", "#FFF8F1"),("rank_8", "#FFF8F1"),  ("rank_9", "#FDFDFD"),  ("rank_10", "#FDFDFD")],
-              [("rank_1", "#FED8B1"), ("rank_2", "#FDEAD6"),  ("rank_3", "#FFF8F1"),  ("rank_4", "#FFF8F1"),  ("rank_5", "#FFF8F1"),  ("rank_6", "#FFF8F1"),  ("rank_7", "#FFF8F1"),("rank_8", "#FFF8F1"),  ("rank_9", "#FDFDFD"),  ("rank_10", "#FDFDFD")]
-    ]
-    
-    for i, (doc_key, doc_info) in enumerate(st.session_state.results.items()):
-
-        # Displaying the highlighted text
+    # for id in st.session_state.documents:
+    labels = [("RANK 1", "#7F5A3E"), ("RANK 2", "#C7936C"),  ("RANK 3", "#FED8B1"),  ("RANK 4", "#FDEAD6"),  ("RANK 5", "#FFF8F1"),  ("RANK 6", "#FFF8F1"),  ("RANK 7", "#FFF8F1"),("RANK 8", "#FFF8F1"),  ("RANK 9", "#FDFDFD"),  ("RANK 10", "#FDFDFD")]
+            #   [("rank_1", "#FED8B1"), ("rank_2", "#FDEAD6"),  ("rank_3", "#FFF8F1"),  ("rank_4", "#FFF8F1"),  ("rank_5", "#FFF8F1"),  ("rank_6", "#FFF8F1"),  ("rank_7", "#FFF8F1"),("rank_8", "#FFF8F1"),  ("rank_9", "#FDFDFD"),  ("rank_10", "#FDFDFD")]
+    # ]
+    # full_content = ""
+    # for i, (doc_key, doc_info) in enumerate(st.session_state.documents.items()):
+    #     full_content += doc_info['full_content'] + "\n"
+    #     # Displaying the highlighted text
+    if st.session_state.documents.get('annotations', []):
         text_highlighter(
-            text=doc_info['full_content'],
-            labels=labels[i],
-            annotations=doc_info['annotations'],
+            text=st.session_state.documents.get('full_content', ""),
+            labels=labels,
+            annotations=st.session_state.documents.get('annotations', []),
         )
 
 
@@ -168,10 +170,9 @@ if st.session_state.messages[-1]["role"] != "assistant":
             segmented_question = prompt
             t1 = time.time()
             print('question: ', segmented_question)
-            results, response = model.query(question = segmented_question, LLM = True)
+            results, response, ques_lst = model.query(df, question = segmented_question, LLM = True)
 
-            results = find_documents(results)
-
+            documents = find_documents(results)
             # context = ''
             # for id in results:
             #     context += f"{results[id]['full_content']}\n"
@@ -180,9 +181,12 @@ if st.session_state.messages[-1]["role"] != "assistant":
             # print(context)
             # response = conversation.predict(input=f"Context:\n {context} \n\n Query:\n{prompt}")
             st.write(response) 
-            
+            while True:
+                st.session_state.questions_sample = random.sample(ques_lst, 2) +  df['question'].sample(n=1, random_state=np.random.RandomState(st.session_state.seed)).tolist()
+                if len(set(st.session_state.questions_sample)) == 3:
+                    break
             st.session_state.seed += np.random.randint(0, 1000)
-            st.session_state.results = results
+            st.session_state.documents = documents
             t2 = time.time()
             print("Time: ", t2 - t1)
         

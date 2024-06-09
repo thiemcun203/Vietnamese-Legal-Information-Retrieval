@@ -94,19 +94,15 @@ def get_rank(model, client, question, response, results, prompt, df_id, id_lst, 
     if id_lst == []:
         return {}
     
-    embedding = model.encode([tokenize(response)])[0]
-    if cosine_similarity([sorry_vector], [embedding])[0][0] > 0.9:
+    embedding = model.encode([tokenize(question+ '\n' +response)])[0]
+    if cosine_similarity([sorry_vector], [embedding])[0][0] > 0.7:
         return {}
 
     def replace_fines(child_str, parent_str):
         # Step 1: Extract monetary amounts from the parent string
         amounts = re.findall(r'\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)? đồng', parent_str)
 
-        # Remove ' đồng' from amounts
         amounts = [amount.replace(' đồng', '') for amount in amounts]
-
-        # Step 2: Replace monetary amounts in the parent string with the placeholder
-        # modified_parent_str = re.sub(r'\d{1,10}(?:[.,]\d{10})*(?:[.,]\d+)? đồng', '< mức phạt tiền >', parent_str)
 
         # Step 3: Match the modified parent string with the child string
         modified_child_str = child_str
@@ -134,7 +130,7 @@ def get_rank(model, client, question, response, results, prompt, df_id, id_lst, 
     for val in df['content']:
         lst.append(replace_fines(val, prompt[start:]))
         print(lst[-1])
-        _, end = find_index(prompt[start:], val)
+        _, end = find_index(prompt[start:].lower(), lst[-1].lower())
         start += end
         
     df['content'] = lst
@@ -147,7 +143,7 @@ def get_rank(model, client, question, response, results, prompt, df_id, id_lst, 
         scores = bm25.get_scores(tokenized_query)
         return scores
 
-    scores = search(response)
+    scores = search(question+ '\n' + response)
     
     # Extract numbers from the response
     response_numbers = extract_numbers(response)
