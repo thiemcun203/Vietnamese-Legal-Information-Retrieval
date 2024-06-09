@@ -1,44 +1,35 @@
-# Legal-Information-Retrieval
+# Legal Information Retrieval System
 
-## How to use ``metrics.py``
+## Setup and Usage Instructions
 
-Ensure that the output to whatever model you used is a json file of the format
-```
-{
-    "question_id": ["article_id_1", "article_id_2", ...]
-}
-```
-where
-- question_id is taken as is from the dataset
-- article_id is the law title concatenated with the article number using a % sign, for example: "28/2020/nđ-cp%21"
-Example
-```
-{
-    "8e2cfe626cebf209f94e0db8f147960c":[
-        "28/2020/nđ-cp%21",
-        "64/2020/qh14%97",
-        "26/2019/nđ-cp%28",
-        "59/2020/qh14%180",
-        "01/2016/qh14%12]"
-    ],
-    "0a32724630653580cc90c77bcf552baf":[
-        "28/2020/nđ-cp%21",
-        "64/2020/qh14%97",
-        "26/2019/nđ-cp%28",
-        "59/2020/qh14%180",
-        "01/2016/qh14%12]"
-    ]
-}
-```
+### Setting Up the Environment
+1. **Data Acquisition**: Begin by downloading all necessary data files from [this link](https://drive.google.com/drive/folders/1J0GdSm2bY7GM-MCUQtPnceLrRhtGlrTt?usp=sharing). Ensure that you have access to all the specified folders and files.
+2. **Configuration Files**: Obtain `secrets.toml` and `.env` files by contacting `thiemnguyenba169@gmail.com` for access to the necessary private keys and configuration settings. Once obtained, place the `secrets.toml` file inside the `.streamlit` directory, ensuring it resides at the same level as the `gui`, `data`, and `.env` files.
+3. **Virtual Environment Creation**: Set up a virtual environment to manage dependencies efficiently.
+4. **Installing Dependencies**: Install all required Python packages by running the following command in your terminal:
+   ```
+   pip install -r requirements.txt
+   ```
+5. **Launching the GUI**: To start the graphical user interface, execute:
+   ```
+   streamlit run gui/main.py
+   ```
 
-Pass that file, along with ``true_results.json`` to initialize a ``RetrievalMetrics`` object. The methods available have been tested and should be easy to understand.
+## System Architecture
+For a visual representation of the system architecture, refer to the following image: `Architecture.png`. For an in-depth understanding, consult the accompanying detailed report.
 
+## Functionality and Examples
 
-## How to run GUI
-1. Make sure you downloaded all data from this link: https://drive.google.com/drive/folders/1J0GdSm2bY7GM-MCUQtPnceLrRhtGlrTt?usp=sharing
-2. Download `secrets.toml` and `.env` also from above link to configurate private key for application. Put `secrets.toml` into `.streamlit` folder which is same level with other folder like: `gui`, `data` or `.env` file
-3. Create virtual enviroment
-4. Run setup.sh to setup and download all necessary packages by typing the following commands to terminal:
-   1. `chmod +x setup.sh`
-   2. `./setup.sh`
-5. Start to use GUI: `streamlit run gui/main.py`
+### Legal Query Handling
+The system is capable of answering legal queries specific to Vietnamese law, using the Zalo data set. It color-codes sources based on relevance, ranging from darkest (most relevant) to lightest (least relevant). While answers are not always exact, this method of reference display significantly aids in verification and easier access to accurate information. Information snippets can be re-ranked for future use, as detailed in the report.
+
+#### Examples:
+- ![Example 1](Example1.png): Demonstrates filtering out irrelevant or non-legal queries.
+-![Example 2](Example2.png): Shows the system providing precise answers with high relevance.
+- ![Example 3](Example3.png): Illustrates the system's capability to maintain and understand the context of an ongoing conversation, enhancing user experience.
+- ![Example 4](Example4.png): The system also suggests related questions to extend the discussion, with some suggestions being random to broaden the conversation scope.
+
+### Feedback Mechanism
+The system includes a feedback option with a "thumbs up" button, allowing users to contribute to Reinforcement Learning with Human Feedback (RLHF) and other model improvements. However, this feature is not fully utilized currently.
+
+Each of these functionalities is designed to enhance the legal information retrieval process, making it more efficient and user-friendly.

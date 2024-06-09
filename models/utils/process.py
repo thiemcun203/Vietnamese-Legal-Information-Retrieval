@@ -19,7 +19,7 @@ openai.api_key  = os.environ["OPENAI_APIKEY"]
 with open(os.getcwd()+'/data/stopwords.txt', 'r', encoding="utf-8") as f:
     list_stopwords = f.read().splitlines()
 
-sorry = "xin lỗi, tôi không biết, không thể trả lời câu hỏi này"
+sorry = "xin lỗi, tôi không biết, Tôi không thể trả lời câu hỏi này. Hãy để tôi biết nếu bạn có câu hỏi nào khác liên quan đến pháp luật Việt Nam"
 
 def clean_text(text):
     text = re.sub('<.*?>', '', text).strip()
@@ -90,13 +90,14 @@ def tokenize_vietnamese(text):
     tokens = [token.strip().lower() for token in text.split()]
     return tokens
 
-def get_rank(model, client, question, response, results, prompt, df_id, id_lst, sorry_vector, limit=10, rerank=True) -> str:
+def get_rank(model, client, question, response, results, df_id, id_lst, sorry_vector, limit=10, rerank=True) -> str:
     if id_lst == []:
         return {}
     
     embedding = model.encode([tokenize(question+ '\n' +response)])[0]
-    if cosine_similarity([sorry_vector], [embedding])[0][0] > 0.7:
-        return {}
+    # print(cosine_similarity([sorry_vector], [embedding])[0][0])
+    # if cosine_similarity([sorry_vector], [embedding])[0][0] > 0.5:
+    #     return {}
 
     def replace_fines(child_str, parent_str):
         # Step 1: Extract monetary amounts from the parent string
@@ -116,24 +117,24 @@ def get_rank(model, client, question, response, results, prompt, df_id, id_lst, 
         results = client.retrieve(collection_name=os.environ["BKAI_COLLECTION_NAME"], ids=[id for id in id_lst], with_vectors=True, with_payload=True)
 
     data = {
-        'vector': [point.vector for point in results],
-        'content': [df_id['content'].iloc[point.id] for point in results],
-        'id': [point.id for point in results],
-        'law_article_id': [point.payload['law_article_id']['law_id'] + '%' + point.payload['law_article_id']['article_id'] for point in results],
+        'vector': [point.vector for point in results] + [sorry_vector],
+        'content': [df_id['filled_content'].iloc[point.id] for point in results]  + [sorry],
+        'id': [point.id for point in results] + [-1],
+        'law_article_id': [point.payload['law_article_id']['law_id'] + '%' + point.payload['law_article_id']['article_id'] for point in results] + [sorry],
     }
 
     df = pd.DataFrame(data)
-    start = 0
-    lst = []
+    # start = 0
+    # lst = []
     
     print('---------------------content------------------')
-    for val in df['content']:
-        lst.append(replace_fines(val, prompt[start:]))
-        print(lst[-1])
-        _, end = find_index(prompt[start:].lower(), lst[-1].lower())
-        start += end
+    # for val in df['content']:
+    #     lst.append(replace_fines(val, prompt[start:]))
+    #     print(lst[-1])
+    #     _, end = find_index(prompt[start:].lower(), lst[-1].lower())
+    #     start += end
         
-    df['content'] = lst
+    # df['filled_content'] = lst
     tokenized_docs = [tokenize_vietnamese(remove_stopwords(tokenize(con))) for con in df['content']]
 
     bm25 = BM25Okapi(tokenized_docs)
@@ -153,7 +154,7 @@ def get_rank(model, client, question, response, results, prompt, df_id, id_lst, 
         content_numbers = extract_numbers(content)
         matches = set(response_numbers) & set(content_numbers)
         if matches:
-            return score * (1 + 0.2 * len(matches))  # Increase score by 10% for each match
+            return score * (1 + 0.4 * len(matches))  # Increase score by 10% for each match
         return score
 
     df['bm25'] = [adjust_bm25_score(con, score) for con, score in zip(df['content'], scores)]
@@ -163,7 +164,7 @@ def get_rank(model, client, question, response, results, prompt, df_id, id_lst, 
     df['similarities'] = df['vector'].apply(lambda x: cosine_similarity([x], [embedding])[0][0])
     df['similarities'] = df['similarities'].apply(lambda x: x/max(df['similarities']) if max(df['similarities']) > 0 else 0)
     
-    df['score'] = 0.65 * df['similarities'] + 0.35 * df['bm25']
+    df['score'] = 0.6 * df['similarities'] + 0.4 * df['bm25']
     
     if rerank:
         df = df.sort_values('score', ascending=False).head(limit) #
@@ -175,6 +176,8 @@ def get_rank(model, client, question, response, results, prompt, df_id, id_lst, 
     k  = 0 
     for i, r in df.iterrows():
         key = r['law_article_id']
+        if r['id'] == -1 and k == 0:
+            return {}
         if key not in content_results:
             content_results[key] = [r['content']]
             k+=1
@@ -184,7 +187,6 @@ def get_rank(model, client, question, response, results, prompt, df_id, id_lst, 
                 k+=1
             else:
                 break
-        
-    
+    content_results.pop(sorry, None)
     return content_results
 

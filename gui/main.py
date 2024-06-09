@@ -46,8 +46,8 @@ def init_BiEncoder():
             old_checkpoint = 'bkai-foundation-models/vietnamese-bi-encoder',
             tunned_checkpoint = '/kaggle/input/checkpoint-1/best_checkpoint.pt',
             tunned = False,
-            model_name = 'gpt-3.5-turbo',
-            # model_name = 'gpt-4',
+            # model_name = 'gpt-3.5-turbo',
+            model_name = 'gpt-4',
         )
 # @st.cache_resource 
 # def init_BM25():
@@ -77,9 +77,14 @@ if 'questions_sample' not in st.session_state:
 
 # Setup memorize the conversation
 if 'buffer_memory' not in st.session_state:
-    st.session_state['buffer_memory'] = ConversationBufferWindowMemory(k=1,return_messages=True)
+    st.session_state['buffer_memory'] = ConversationBufferWindowMemory(k=5,return_messages=True)
+if "check" not in st.session_state:
+    st.session_state.check = 0
 
-system_msg_template = SystemMessagePromptTemplate.from_template(template="""Answer the question in Vietnamese as truthfully as possible using the provided context,
+system_msg_template = SystemMessagePromptTemplate.from_template(template="""Viết lại câu hỏi về pháp luật người dùng một cách dễ hiểu và ngắn gọn nhất dựa trên ngữ cảnh hội thoại và ý định của người dùng
+Câu hỏi viết lại không cần có đại từ xưng hô                                       
+Lưu ý chỉ viết câu hỏi, không cần trả lời.
+Hãy giúp tôi diễn giải câu hỏi sau:
 """) #and if the answer is not contained within the text below, say 'Tôi không biết'
 human_msg_template = HumanMessagePromptTemplate.from_template(template="{input}")
 prompt_template = ChatPromptTemplate.from_messages([system_msg_template, MessagesPlaceholder(variable_name="history"), human_msg_template])
@@ -130,6 +135,7 @@ if prompt := st.chat_input():
     if st.session_state.double + 1 != st.session_state.count:
         st.session_state.double = copy.deepcopy(st.session_state.count)
         st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.check = 1
         with st.chat_message("user", avatar="😎"):
             st.write(prompt)
             
@@ -169,7 +175,10 @@ if st.session_state.messages[-1]["role"] != "assistant":
             # segmented_question = prompt.encode('utf-8').decode('utf-8')
             segmented_question = prompt
             t1 = time.time()
-            print('question: ', segmented_question)
+            print('raw_question: ', segmented_question)
+            if st.session_state.check == 1:
+                segmented_question = conversation.predict(input=f"{segmented_question}")
+            print('new_question', segmented_question)
             results, response, ques_lst = model.query(df, question = segmented_question, LLM = True)
 
             documents = find_documents(results)
@@ -179,7 +188,7 @@ if st.session_state.messages[-1]["role"] != "assistant":
             # context = [results[id]['splitted_info'] for id in results]
 
             # print(context)
-            # response = conversation.predict(input=f"Context:\n {context} \n\n Query:\n{prompt}")
+            st.session_state.check = 0
             st.write(response) 
             while True:
                 st.session_state.questions_sample = random.sample(ques_lst, 2) +  df['question'].sample(n=1, random_state=np.random.RandomState(st.session_state.seed)).tolist()

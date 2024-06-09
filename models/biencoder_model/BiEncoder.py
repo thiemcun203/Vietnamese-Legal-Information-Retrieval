@@ -14,7 +14,7 @@ from models.utils.metrics import *
 from models.utils.process import *
 dotenv_path = os.getcwd() + '/.env'
 load_dotenv(dotenv_path)
-df_id = pd.read_csv(os.getcwd() + '/data/corpus/legal_corpus_id.csv')
+df_id = pd.read_csv(os.getcwd() + '/data/corpus/updated_legal_corpus.csv')
 import time
 class BiEncoder:
     def __init__(self, 
@@ -56,7 +56,7 @@ class BiEncoder:
             checkpoint = torch.load(tunned_checkpoint, map_location=self.device)
             self.model.load_state_dict(checkpoint['model'])
             self.model.to(self.device)
-        self.sorry_vector = self.encode([tokenize("xin lỗi, tôi không biết, không thể trả lời câu hỏi này, không thể trả lời câu hỏi cá nhân hoặc không liên quan đến pháp luật")])[0]
+        self.sorry_vector = self.encode([tokenize("xin lỗi, tôi không biết, không thể trả lời câu hỏi này. Tôi không thể trả lời câu hỏi cá nhân như vậy. Hãy để tôi biết nếu bạn có câu hỏi nào khác liên quan đến pháp luật Việt Nam")])[0]
 
     def encode(self, segmented_questions):
         encoded_input = self.tokenizer(segmented_questions, padding=True, truncation=True, return_tensors='pt', max_length=256)
@@ -77,7 +77,7 @@ class BiEncoder:
     def query(self, df,  question = 'khái_niệm quỹ đại_chúng', topk = 10, LLM = True):
         t = 0
         embed = self.encode([tokenize(question.lower())])[0]
-        while True and t < 3:
+        while True and t < 1:
             wait = 0.1
             while True:
                 try:
@@ -170,7 +170,7 @@ class BiEncoder:
             for id in ques_lst  if not df.loc[df['question_id'] == id, 'question'].empty
         ][:15]
         
-        return get_rank(self, self.client, question, response, results, f_prompt, df_id,  id_lst, self.sorry_vector, limit = topk, rerank = LLM), response, ques_lst
+        return get_rank(self, self.client, question, response, results, df_id,  id_lst, self.sorry_vector, limit = topk, rerank = LLM), response, ques_lst
         
     def query_lst(self, segmented_questions = ['khái_niệm quỹ đại_chúng', "hồ_sơ thành_lập quán karaoke bao_gồm những gì ?"], topk = 10):
         vectors = self.encode(segmented_questions)
@@ -234,7 +234,8 @@ if __name__ == "__main__":
     # segmented_question = 'Tự ý di chuyển vị trí biển báo “khu vực biên giới” bị phạt thế nào?'
     # segmented_question = 'Mức phạt khi điều khiển xe ô tô không lắp đủ bánh lốp theo nghị định 100/2019/NĐ-CP?'
     # segmented_question = 'Chủ tàu cá sử dụng tàu cá có chiều dài là 18.5 m khai thác thủy sản mà không có Giấy phép khai thác thủy sản sẽ bị xử phạt như thế nào?'
-    segmented_question = 'Thực hiện không đúng quy định về phát bưu gửi bị phạt bao nhiêu?'
+    # segmented_question = 'Thực hiện không đúng quy định về phát bưu gửi bị phạt bao nhiêu?'
+    segmented_question = 'em yêu anh ko'
     df = pd.read_csv(os.getcwd() + '/data/qna/best_test_qna.csv')
     print(segmented_question)
     t1 = time.time()
