@@ -21,7 +21,7 @@ For a visual representation of the system architecture, refer to the following i
 ## Functionality and Examples
 
 ### Legal Query Handling
-The system is capable of answering legal queries specific to Vietnamese law, using the Zalo data set. It color-codes sources based on relevance, ranging from darkest (most relevant) to lightest (least relevant). We also employed technique for automatically removing highest unrelevant documents depend on answer and question to avoid too many reference chunk proposed.  While answers are not always exact, this method of reference display significantly aids in verification and easier access to accurate information. Information snippets can be re-ranked for future use, as detailed in the report. Time to response: 5~10s
+The system is capable of answering legal queries specific to Vietnamese law, using the Zalo data set. It color-codes sources based on relevance, ranging from darkest (most relevant) to lightest (least relevant). We also employed technique for automatically removing highest unrelevant documents depend on answer and question to avoid too many reference chunks proposed.  While answers are not always exact, this method of reference display significantly aids in verification and easier access to accurate information. Information snippets can be re-ranked for future use, as detailed in the report. Time to response: 5~10s
 
 #### Examples:
 - ![Example 1](Example1.png): Demonstrates filtering out irrelevant or non-legal queries.
